@@ -1,0 +1,5 @@
+# One root row beside the built-in llm-retry executor. Settings are volatile
+# Config fields stored in the profile patch and edited on this bundle's page.
+- insert:
+    - id: auto-retry
+      name: dsh-auto-retry

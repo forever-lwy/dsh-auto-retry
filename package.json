@@ -1,0 +1,76 @@
+{
+  "name": "dsh-auto-retry",
+  "version": "0.1.0",
+  "description": "Retry failed model requests in place on upstream errors (524, 429, network drops, custom rules) for DSH rc.5, keeping all completed work",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13",
+    "dsh": "0.2.1-rc.5"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --test-isolation=none test/*.test.mjs",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5",
+    "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-agent": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-session": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-session-projection": "0.2.1-rc.5"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis-plugin-loader": "~1.0.6",
+    "@deepseek-ai/dsh-agent-loop": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-api-remotes": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-plugin-manager": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-renderer": "^0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm-retry": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "0.25.12",
+    "jsdom": "26.1.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "~5.9.3"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-plugin-manager",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  }
+}
