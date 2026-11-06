@@ -15,13 +15,17 @@ dsh 的 agent loop 在结束一轮之前，会把每次失败的模型请求交�
 
 ## 安装
 
-开发源码与运行副本分离。版本包：
+在 DSH「插件 → 添加插件」输入下面的来源，确认安装并启用：
 
 ```text
-/plugins/releases/dsh-auto-retry-0.1.1.tgz
+github:forever-lwy/dsh-auto-retry
 ```
 
-在 dsh「插件 → 添加插件」输入上面的**容器路径**，确认安装并启用。是否需要重启以安装界面提示为准。不要用 `link:`、目录依赖或模块路径把源码目录接入常用 profile。
+仓库默认分支是 `release`，其中每个提交都是某次发版的源码加上构建好的 `lib/`，并去掉了 `prepare`，所以安装时不装 devDependencies、不构建。dshmarket 按默认分支上 `package.json` 的版本号判断是否有更新，点击更新时安装 `release` 的最新提交。不要安装 `master`：它只有源码，安装时会靠 `prepare` 拉全部 devDependencies 现场构建。
+
+包名自 0.1.2 起为 `@forever-lwy/dsh-auto-retry`，以免与 npm 和插件市场目录里的同名插件混淆。从旧的 `dsh-auto-retry` 版本包迁移时，先卸载旧的 `dsh-auto-retry`，再安装上面的来源；两者注册同一宿主行，不能同时安装。宿主行 id 和设置命名空间不变。
+
+是否需要重启以安装界面提示为准。不要用 `link:`、目录依赖或模块路径把源码目录接入常用 profile。
 
 ## 设置
 
@@ -81,3 +85,5 @@ npm test
 ```
 
 测试在真实的 rc.5 agent loop 中运行：一个脚本化的上游在完成一次工具调用后连续返回 524 和断连，验证工具不重复执行、重发请求与原请求一致、没有额外用户消息，以及次数用尽、取消、规则排除、与内置重试交接、设置页读写和配置热更新。
+
+发版：在 `master` 上开发和推送不会触发任何构建。改完后递增 `package.json` 版本并提交，打同名标签并推送，例如 `git tag v0.1.2 && git push origin master v0.1.2`。GitHub Actions（`.github/workflows/release.yml`）只在 `v*` 标签推送时运行：检查标签与版本一致，按 lockfile `npm ci`，由 `scripts/release.mjs` 构建、测试，在 `release` 分支上追加一个发布提交（源码加 `lib/`，去掉 `prepare`；父提交是上一个发布提交和该标签的源码提交）并推送。`release` 已有同一或更高版本时会拒绝发版。`npm run release` 可在本地对已打标签的提交生成同样的发布提交（不推送）。

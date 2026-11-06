@@ -12,7 +12,7 @@ export const name = 'dsh-auto-retry-client'
 export const inject = ['slots', 'locale', 'configForms']
 
 /** npm package name: the key of this bundle's page on the Plugins page. */
-const PACKAGE = 'dsh-auto-retry'
+const PACKAGE = '@forever-lwy/dsh-auto-retry'
 /** Settings namespace: the row id declared in cordis.patch.yml. */
 const ENTRY = 'auto-retry'
 const namespace = 'dshAutoRetry'

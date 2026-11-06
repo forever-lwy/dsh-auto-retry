@@ -18,7 +18,7 @@ test('package declares an installable ungated bundle with a browser build', asyn
   assert.equal(packageJson.exports['./client'], './lib/client.js')
   assert.ok(packageJson.files.includes('lib') && packageJson.files.includes('cordis.patch.yml'))
   const client = await readFile(new URL('../lib/client.js', import.meta.url), 'utf8')
-  assert.match(client, /^window\.__ModuleLoader__\.load\(\{id:"dsh-auto-retry"/)
+  assert.match(client, /^window\.__ModuleLoader__\.load\(\{id:"@forever-lwy\/dsh-auto-retry"/)
   // Only Host-provided modules may be required by the browser half.
   assert.deepEqual([...new Set(client.match(/require\("[^"]+"\)/g))].sort(), ['require("react")', 'require("react/jsx-runtime")'])
 })
@@ -31,7 +31,7 @@ test('every Config field is volatile, so the settings page can edit it live', ()
 
 test('the bundle row loads beside native services and applies edits without a remount', async () => {
   const rows = composeEntries([loadOverlayPatches('auto-retry-test', patchFile)])
-  assert.deepEqual(rows.map(row => [row.id, row.name]), [['auto-retry', 'dsh-auto-retry']])
+  assert.deepEqual(rows.map(row => [row.id, row.name]), [['auto-retry', '@forever-lwy/dsh-auto-retry']])
   const ctx = new Context()
   try {
     for (const service of [SessionStore, AgentRegistry, SessionProjectionRegistry]) await ctx.plugin(service)
@@ -41,7 +41,7 @@ test('the bundle row loads beside native services and applies edits without a re
     // cordis 4.1 keeps raw input on fiber.config; observe the config object the plugin itself receives.
     let config
     const observed = { ...Plugin, apply(pluginCtx, received, ...rest) { config = received; return Plugin.apply(pluginCtx, received, ...rest) } }
-    loader.import = (name, ...args) => name === 'dsh-auto-retry' ? observed : originalImport(name, ...args)
+    loader.import = (name, ...args) => name === '@forever-lwy/dsh-auto-retry' ? observed : originalImport(name, ...args)
     await loader.root.update(rows)
     await loader.await()
     const entry = loader.resolve('auto-retry')
