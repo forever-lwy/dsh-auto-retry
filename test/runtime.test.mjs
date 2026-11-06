@@ -10,6 +10,7 @@ import { SessionStore, SessionId } from '@deepseek-ai/dsh-session'
 import { SessionProjectionRegistry } from '@deepseek-ai/dsh-session-projection'
 import { SystemPrompt } from '@deepseek-ai/dsh-system-prompt'
 import { ToolRuntime, defineTool } from '@deepseek-ai/dsh-tools'
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
 import { LlmRuntime, LlmAdapter, LlmError, createUserMessage } from '@deepseek-ai/dsh-llm'
 import * as BuiltinRetry from '@deepseek-ai/dsh-llm-retry'
 import * as Plugin from '../lib/index.js'
@@ -59,6 +60,7 @@ async function harness({ script, config = {}, builtin = false, retryPolicy } = {
   for (const service of [SessionStore, AgentRegistry, SessionProjectionRegistry, LlmRuntime]) await ctx.plugin(service)
   await ctx.plugin(SystemPrompt, { includeHarnessIdentity: false, includeRuntimeContext: false })
   await ctx.plugin(ToolRuntime)
+  await ctx.plugin(NativeToolExecutor)
   await ctx.plugin(AgentLoop, {})
   const adapter = new ScriptedAdapter(script, retryPolicy)
   ctx.llm.registerAdapter([PROVIDER], adapter)

@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { LlmFailure } from '@deepseek-ai/dsh-llm'
-import type {} from '@deepseek-ai/dsh-session-projection'
+import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-llm-retry/types'
 import z from '@deepseek-ai/schemastery'
 import { z as zod } from 'zod'
@@ -52,12 +52,6 @@ interface RetryChain {
   retryId: string
 }
 
-declare module '@deepseek-ai/dsh-session-projection' {
-  interface SessionProjectionStateMap {
-    dshAutoRetry: RetryChain
-  }
-}
-
 const chainSchema = zod.object({ retry: zod.number().int().nonnegative(), retryId: zod.string() })
 const EMPTY_CHAIN: RetryChain = Object.freeze({ retry: 0, retryId: '' })
 
@@ -89,7 +83,9 @@ export function apply(ctx: Context, config: Record<string, unknown> = {}, intern
 
   // The chain lives in the session log: it resets when the next step or turn
   // starts, and survives a reload of this plugin mid-step.
-  ctx.sessionProjections.register({
+  // Host-only unit: 0.2.2 registration is asynchronous and the awaited handle
+  // is the supported reader (the registry-level stateOf is deprecated).
+  const chainHandle: Promise<ProjectionHandle<RetryChain>> = ctx.sessionProjections.register({
     key: PROJECTION_KEY,
     stateVersion: 1,
     stateSchema: chainSchema,
@@ -99,6 +95,9 @@ export function apply(ctx: Context, config: Record<string, unknown> = {}, intern
       if (event.type !== 'llm/retry' || event.data.policyKey !== POLICY_KEY) return state
       return { retry: event.data.retry, retryId: event.data.retryId }
     },
+  })
+  chainHandle.catch(error => {
+    ctx.logger.warn('auto-retry: projection registration failed: %s', error instanceof Error ? error.message : String(error))
   })
 
   let compiled: { key: string; patterns: RegExp[] } | undefined
@@ -130,7 +129,7 @@ export function apply(ctx: Context, config: Record<string, unknown> = {}, intern
 
     // A matched failure belongs to this plugin: once its budget is spent the
     // step fails, rather than letting another policy add retries on top.
-    const chain = ctx.sessionProjections.stateOf(agent.session, PROJECTION_KEY) ?? EMPTY_CHAIN
+    const chain = (await chainHandle).stateOf(agent.session) ?? EMPTY_CHAIN
     if (chain.retry >= settings.maxRetries) {
       ctx.logger.info('auto-retry: %s failed (%s) after %d retries; giving up', provider, verdict.reason, chain.retry)
       return undefined
