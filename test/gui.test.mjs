@@ -137,3 +137,18 @@ test('client registers its page on this bundle while the auto-retry row is serve
   assert.ok(document.querySelector('style[data-plugin="@forever-lwy/dsh-auto-retry"]'))
   for (const dispose of effects) if (typeof dispose === 'function') dispose()
 })
+
+test('the keep-partial switch defaults on and saves an explicit off', async () => {
+  const form = fakeForm()
+  const { container, root } = await render(form)
+  try {
+    const box = byLabel(container, zh.keepPartial)
+    assert.equal(box.checked, true)
+    await click(box)
+    await click(button(container, zh.save))
+    assert.deepEqual(form.writes, [{ revision: 3, ops: [{ op: 'set', path: ['keepPartial'], value: false }] }])
+    await click(byLabel(container, zh.keepPartial))
+    await click(button(container, zh.save))
+    assert.deepEqual(form.writes[1].ops, [{ op: 'unset', path: ['keepPartial'] }], 'back to the default follows future defaults')
+  } finally { await act(async () => root.unmount()) }
+})

@@ -81,7 +81,7 @@ export function AutoRetrySettings(props: SettingsProps) {
     <textarea id={`${id}-${key}`} rows={rows} spellCheck={false} value={draft[key] as string} disabled={disabled}
       aria-invalid={errors[key] ? true : undefined} onChange={event => edit(key, event.target.value as never)} />
   )
-  const toggle = (key: 'enabled' | 'respectRetryAfter', label: string, hint: string) => (
+  const toggle = (key: 'enabled' | 'respectRetryAfter' | 'keepPartial', label: string, hint: string) => (
     <label className="dar-toggle">
       <input type="checkbox" checked={draft[key]} disabled={disabled} onChange={event => edit(key, event.target.checked)} />
       <span><span>{label}{changed(key)}</span><small>{hint}</small></span>
@@ -93,6 +93,7 @@ export function AutoRetrySettings(props: SettingsProps) {
       <p>{t('intro')}</p>
       {!snapshot.writable ? <p className="dar-hint">{t('readOnly')}</p> : null}
       {toggle('enabled', t('enabled'), t('enabledHint'))}
+      {toggle('keepPartial', t('keepPartial'), t('keepPartialHint'))}
       <div className="dar-grid">
         {field('maxRetries', t('maxRetries'), text('maxRetries', 'numeric'), t('maxRetriesHint'), ['maxRetries'])}
         {field('initialDelay', t('initialDelay'), text('initialDelay', 'decimal'), t('initialDelayHint'), ['initialDelayMs'])}

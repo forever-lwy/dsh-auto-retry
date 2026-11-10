@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis';
 import z from '@deepseek-ai/schemastery';
 export * from './policy.js';
+export * from './salvage.js';
 export declare const name = "dsh-auto-retry";
 export declare const inject: string[];
 /** Marks this plugin's `llm/retry` events; the built-in executor keys its own chains apart. */
@@ -18,6 +19,7 @@ export declare const Config: z<Schemastery.ObjectS<NoInfer<{
     messagePatterns: z<NoInfer<string[]>, NoInfer<string[]>, "volatile-defined">;
     excludeCodes: z<NoInfer<string[]>, NoInfer<string[]>, "volatile-defined">;
     providers: z<NoInfer<string[]>, NoInfer<string[]>, "volatile-defined">;
+    keepPartial: z<boolean, boolean, "volatile-defined">;
 }>>, Schemastery.ObjectT<NoInfer<{
     enabled: z<boolean, boolean, "volatile-defined">;
     maxRetries: z<number, number, "volatile-defined">;
@@ -30,6 +32,7 @@ export declare const Config: z<Schemastery.ObjectS<NoInfer<{
     messagePatterns: z<NoInfer<string[]>, NoInfer<string[]>, "volatile-defined">;
     excludeCodes: z<NoInfer<string[]>, NoInfer<string[]>, "volatile-defined">;
     providers: z<NoInfer<string[]>, NoInfer<string[]>, "volatile-defined">;
+    keepPartial: z<boolean, boolean, "volatile-defined">;
 }>>, "plain">;
 export interface Internals {
     random?: () => number;

@@ -3,7 +3,7 @@
  * settings path operations. Kept free of React so tests can run it directly.
  */
 import { type RetrySettings } from '../policy.js';
-export declare const FIELDS: readonly ["enabled", "maxRetries", "initialDelayMs", "maxDelayMs", "respectRetryAfter", "statusCodes", "codes", "messagePatterns", "excludeCodes", "providers"];
+export declare const FIELDS: readonly ["enabled", "maxRetries", "initialDelayMs", "maxDelayMs", "respectRetryAfter", "statusCodes", "codes", "messagePatterns", "excludeCodes", "providers", "keepPartial"];
 export type Field = typeof FIELDS[number];
 export interface Draft {
     enabled: boolean;
@@ -16,6 +16,7 @@ export interface Draft {
     messagePatterns: string;
     excludeCodes: string;
     providers: string;
+    keepPartial: boolean;
 }
 export type PathOp = {
     op: 'set';

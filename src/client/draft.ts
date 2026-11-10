@@ -5,7 +5,7 @@
 import { DEFAULT_SETTINGS, LIMITS, type RetrySettings } from '../policy.js'
 
 export const FIELDS = ['enabled', 'maxRetries', 'initialDelayMs', 'maxDelayMs', 'respectRetryAfter',
-  'statusCodes', 'codes', 'messagePatterns', 'excludeCodes', 'providers'] as const
+  'statusCodes', 'codes', 'messagePatterns', 'excludeCodes', 'providers', 'keepPartial'] as const
 export type Field = typeof FIELDS[number]
 
 export interface Draft {
@@ -19,6 +19,7 @@ export interface Draft {
   messagePatterns: string
   excludeCodes: string
   providers: string
+  keepPartial: boolean
 }
 
 export type PathOp = { op: 'set'; path: string[]; value: unknown } | { op: 'unset'; path: string[] }
@@ -41,6 +42,7 @@ export function resolveSection(value: unknown): RetrySettings {
     enabled: pick('enabled'), maxRetries: pick('maxRetries'), initialDelayMs: pick('initialDelayMs'), maxDelayMs: pick('maxDelayMs'),
     jitterRatio: pick('jitterRatio'), respectRetryAfter: pick('respectRetryAfter'), statusCodes: pick('statusCodes'), codes: pick('codes'),
     messagePatterns: pick('messagePatterns'), excludeCodes: pick('excludeCodes'), providers: pick('providers'),
+    keepPartial: pick('keepPartial'),
   }
 }
 
@@ -56,6 +58,7 @@ export function toDraft(settings: RetrySettings): Draft {
     messagePatterns: settings.messagePatterns.join('\n'),
     excludeCodes: list(settings.excludeCodes),
     providers: list(settings.providers),
+    keepPartial: settings.keepPartial,
   }
 }
 
@@ -112,6 +115,7 @@ export function parseDraft(draft: Draft, base: RetrySettings): { settings: Retry
       messagePatterns: uniq(messagePatterns),
       excludeCodes: uniq(splitList(draft.excludeCodes).map(code => code.toUpperCase())),
       providers: uniq(splitList(draft.providers)),
+      keepPartial: draft.keepPartial,
     },
   }
 }

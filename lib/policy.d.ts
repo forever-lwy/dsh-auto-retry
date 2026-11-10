@@ -30,6 +30,8 @@ export interface RetrySettings {
     excludeCodes: string[];
     /** Provider ids this plugin handles; empty handles every provider. */
     providers: string[];
+    /** Keep answer text streamed before a failure as a truncated reply instead of discarding it. */
+    keepPartial: boolean;
 }
 export declare const DEFAULT_SETTINGS: Readonly<RetrySettings>;
 export declare const LIMITS: Readonly<{

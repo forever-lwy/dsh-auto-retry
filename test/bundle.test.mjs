@@ -25,7 +25,7 @@ test('package declares an installable ungated bundle with a browser build', asyn
 
 test('every Config field is volatile, so the settings page can edit it live', () => {
   const fields = Object.entries(Plugin.Config.dict)
-  assert.equal(fields.length, 11)
+  assert.equal(fields.length, 12)
   for (const [key, node] of fields) assert.equal(node.meta.volatile, true, key)
 })
 
