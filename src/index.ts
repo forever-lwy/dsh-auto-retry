@@ -10,18 +10,25 @@
  * Retries are recorded as the native `llm/retry` / `llm/retry-started` events
  * before and after each wait, so the chat shows them with its built-in retry
  * row and cancellation leaves a consistent log.
+ *
+ * Separately, an agent-loop request that fails after answer text has already
+ * streamed is kept instead (see `salvage.ts`): the text is committed to the
+ * session as a truncated reply and the user can ask the model to continue.
+ * That request is not retried, because a retry would discard the text.
  */
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import type { LlmFailure } from '@deepseek-ai/dsh-llm'
+import { isAgentLoopRequest, type GenerateOptions, type LlmFailure, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-llm-retry/types'
 import z from '@deepseek-ai/schemastery'
 import { z as zod } from 'zod'
 import { DEFAULT_SETTINGS, LIMITS, classify, compilePatterns, readSettings, retryDelay, type RetrySettings } from './policy.js'
+import { salvagePartial } from './salvage.js'
 
 export * from './policy.js'
+export * from './salvage.js'
 
 export const name = 'dsh-auto-retry'
 export const inject = ['agents', 'sessionProjections']
@@ -44,6 +51,7 @@ export const Config = z.object({
   messagePatterns: z.array(z.string()).default([...d.messagePatterns]).volatile().description('匹配错误信息的正则表达式（不区分大小写）'),
   excludeCodes: z.array(z.string()).default([...d.excludeCodes]).volatile().description('始终不重试的错误代码'),
   providers: z.array(z.string()).default([...d.providers]).volatile().description('仅对这些提供方生效；留空表示全部'),
+  keepPartial: z.boolean().default(d.keepPartial).volatile().description('出错时保留已生成内容'),
 })
 
 interface RetryChain {
@@ -166,7 +174,20 @@ export function apply(ctx: Context, config: Record<string, unknown> = {}, intern
     return track(recover(payload as RequestErrorPayload, next as () => Promise<RequestErrorAction>))
   }, true)
 
+  // Wraps every provider's stream. Only agent-loop requests are touched:
+  // titles, summaries and other internal calls keep their plain errors.
+  const disposeSalvage = ctx.on('llm/stream', (options: GenerateOptions, next: () => AsyncIterable<StreamChunk>) => {
+    if (lifetime.signal.aborted || !isAgentLoopRequest(options)) return next()
+    const settings = readSettings(config)
+    if (!settings.keepPartial) return next()
+    if (settings.providers.length > 0 && !settings.providers.includes(options.provider)) return next()
+    return salvagePartial(next(), failure => {
+      ctx.logger.info('auto-retry: %s failed after answer text (%s); keeping the partial reply', options.provider, failure.code)
+    })
+  }, true)
+
   ctx.effect(() => async () => {
+    disposeSalvage()
     dispose()
     lifetime.abort(new Error('dsh-auto-retry disposed'))
     await Promise.allSettled([...active])

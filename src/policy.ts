@@ -32,6 +32,8 @@ export interface RetrySettings {
   excludeCodes: string[]
   /** Provider ids this plugin handles; empty handles every provider. */
   providers: string[]
+  /** Keep answer text streamed before a failure as a truncated reply instead of discarding it. */
+  keepPartial: boolean
 }
 
 export const DEFAULT_SETTINGS: Readonly<RetrySettings> = Object.freeze({
@@ -56,6 +58,7 @@ export const DEFAULT_SETTINGS: Readonly<RetrySettings> = Object.freeze({
     'MISSING_CREDENTIAL', 'MODEL_NOT_FOUND', 'CONTEXT_WINDOW_EXCEEDED', 'IMAGE_OFFLOAD_REQUIRED',
   ],
   providers: [],
+  keepPartial: true,
 })
 
 export const LIMITS = Object.freeze({
@@ -110,6 +113,7 @@ export function readSettings(config: Record<string, unknown> | undefined): Retry
     messagePatterns: strings(raw('messagePatterns'), d.messagePatterns),
     excludeCodes: strings(raw('excludeCodes'), d.excludeCodes),
     providers: strings(raw('providers'), d.providers),
+    keepPartial: typeof raw('keepPartial') === 'boolean' ? raw('keepPartial') as boolean : d.keepPartial,
   }
 }
 
