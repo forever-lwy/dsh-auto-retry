@@ -19,7 +19,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import { isAgentLoopRequest, type GenerateOptions, type LlmFailure, type StreamChunk } from '@deepseek-ai/dsh-llm'
+import { isAgentLoopRequest, type GenerateOptions, type LlmFailure, type ResolvedRetryPolicy, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-llm-retry/types'
 import z from '@deepseek-ai/schemastery'
@@ -69,6 +69,7 @@ interface RequestErrorPayload {
   step: number
   provider: string
   failure: LlmFailure
+  retryPolicy?: ResolvedRetryPolicy
   signal: AbortSignal
 }
 type RequestErrorAction = { kind: 'retry' } | undefined
@@ -132,6 +133,11 @@ export function apply(ctx: Context, config: Record<string, unknown> = {}, intern
     const settings = readSettings(config)
     if (!settings.enabled) return next()
     if (settings.providers.length > 0 && !settings.providers.includes(provider)) return next()
+    // The request captured its provider policy when it started. Native-covered
+    // failures stay with that executor, including after its budget is exhausted.
+    // Custom HTTP/message rules only extend failures outside that policy.
+    const policy = payload.retryPolicy
+    if (policy && (policy.mode === 'always' || policy.retryableCodes.includes(failure.code))) return next()
     const verdict = classify(failure, settings, patternsOf(settings))
     if (verdict.kind !== 'retry') return next()
 
