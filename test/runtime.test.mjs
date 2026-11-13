@@ -154,26 +154,39 @@ test('excluded and unmatched failures are left to the rest of the chain', async 
   }
 })
 
-test('runs before the built-in executor and keeps it for failures it does not own', async () => {
-  // The built-in policy would retry SERVER_ERROR once more; this plugin owns it, so only its budget applies.
-  const policy = { mode: 'normal', maxRetries: 3, retryableCodes: ['SERVER_ERROR', 'AUTH'], initialDelayMs: 1, maxDelayMs: 2, jitterRatio: 0 }
-  const { ctx, agent, adapter } = await harness({ builtin: true, retryPolicy: policy, config: { maxRetries: 1 }, script: [http524, http524, { text: 'never' }] })
+test('native-covered failures keep the provider budget without extra plugin retries', async () => {
+  const policy = { mode: 'normal', maxRetries: 1, retryableCodes: ['SERVER_ERROR'], initialDelayMs: 1, maxDelayMs: 2, jitterRatio: 0 }
+  const { ctx, agent, adapter } = await harness({ builtin: true, retryPolicy: policy, config: { maxRetries: 5 }, script: [http524, http524, { text: 'never' }] })
+  try {
+    await runTurn(agent)
+    assert.equal(adapter.requests.length, 2)
+    const keys = eventsOf(agent, 'llm/retry').map(event => event.data.policyKey)
+    assert.equal(keys.length, 1)
+    assert.notEqual(keys[0], Plugin.POLICY_KEY)
+  } finally { await ctx.fiber.dispose() }
+})
+
+test('custom rules recover errors outside the native policy', async () => {
+  const policy = { mode: 'normal', maxRetries: 1, retryableCodes: ['SERVER'], initialDelayMs: 1, maxDelayMs: 2, jitterRatio: 0 }
+  const { ctx, agent, adapter } = await harness({ builtin: true, retryPolicy: policy, script: [http524, { text: 'recovered' }] })
   try {
     await runTurn(agent)
     assert.equal(adapter.requests.length, 2)
     assert.deepEqual(eventsOf(agent, 'llm/retry').map(event => event.data.policyKey), [Plugin.POLICY_KEY])
+    assert.equal(turnEnd(agent).kind, 'completed')
   } finally { await ctx.fiber.dispose() }
+})
 
-  // AUTH is excluded here, so it falls through and the built-in policy retries it under its own key.
-  const handoff = await harness({ builtin: true, retryPolicy: policy, script: [auth, { text: 'recovered' }] })
+test('native always mode keeps ownership instead of running a second retry chain', async () => {
+  const policy = { mode: 'always', initialDelayMs: 1, maxDelayMs: 2, jitterRatio: 0 }
+  const { ctx, agent, adapter } = await harness({ builtin: true, retryPolicy: policy, config: { maxRetries: 0 }, script: [http524, { text: 'recovered' }] })
   try {
-    await runTurn(handoff.agent)
-    assert.equal(handoff.adapter.requests.length, 2)
-    const keys = eventsOf(handoff.agent, 'llm/retry').map(event => event.data.policyKey)
+    await runTurn(agent)
+    assert.equal(adapter.requests.length, 2)
+    const keys = eventsOf(agent, 'llm/retry').map(event => event.data.policyKey)
     assert.equal(keys.length, 1)
     assert.notEqual(keys[0], Plugin.POLICY_KEY)
-    assert.equal(turnEnd(handoff.agent).kind, 'completed')
-  } finally { await handoff.ctx.fiber.dispose() }
+  } finally { await ctx.fiber.dispose() }
 })
 
 test('cancelling during the wait stops the retry', async () => {
