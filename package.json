@@ -1,6 +1,6 @@
 {
   "name": "@forever-lwy/dsh-auto-retry",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Retry failed model requests in place on upstream errors (524, 429, network drops, custom rules), keeping all completed work and any answer text streamed before a failure",
   "type": "module",
   "main": "lib/index.js",

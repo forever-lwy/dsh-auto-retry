@@ -22,7 +22,7 @@ export interface Draft {
   keepPartial: boolean
 }
 
-export type PathOp = { op: 'set'; path: string[]; value: unknown } | { op: 'unset'; path: string[] }
+export type PathOp = { op: 'set'; path: string[]; value: RetrySettings[Field] } | { op: 'unset'; path: string[] }
 
 /** Seconds shown without float noise, e.g. 2000 → "2", 1500 → "1.5". */
 function seconds(ms: number): string {
