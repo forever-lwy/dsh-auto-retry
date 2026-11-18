@@ -21,7 +21,7 @@ export interface Draft {
 export type PathOp = {
     op: 'set';
     path: string[];
-    value: unknown;
+    value: RetrySettings[Field];
 } | {
     op: 'unset';
     path: string[];

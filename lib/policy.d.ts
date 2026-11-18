@@ -2,6 +2,8 @@
  * Pure retry policy: which upstream failures are retried and how long to wait.
  * The Host plugin reads live settings and owns all side effects.
  */
+/** Explicit provider refusals keep their original finish and recovery semantics. */
+export declare const CONTENT_REFUSED = "CONTENT_REFUSED";
 /** Serializable failure facts as the agent loop hands them over (`LlmFailure`). */
 export interface FailureFacts {
     readonly message: string;

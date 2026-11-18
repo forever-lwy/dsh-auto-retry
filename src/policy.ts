@@ -3,6 +3,9 @@
  * The Host plugin reads live settings and owns all side effects.
  */
 
+/** Explicit provider refusals keep their original finish and recovery semantics. */
+export const CONTENT_REFUSED = 'CONTENT_REFUSED'
+
 /** Serializable failure facts as the agent loop hands them over (`LlmFailure`). */
 export interface FailureFacts {
   readonly message: string
@@ -134,7 +137,9 @@ export function compilePatterns(patterns: readonly string[], onInvalid?: (patter
  * Exclusions win; then status, code and message rules match in that order.
  */
 export function classify(failure: FailureFacts, settings: RetrySettings, patterns: readonly RegExp[]): Verdict {
-  if (settings.excludeCodes.includes(failure.code)) return { kind: 'excluded', reason: `code ${failure.code}` }
+  if (failure.code === CONTENT_REFUSED || settings.excludeCodes.includes(failure.code)) {
+    return { kind: 'excluded', reason: `code ${failure.code}` }
+  }
   if (failure.status !== undefined && settings.statusCodes.includes(failure.status)) return { kind: 'retry', reason: `HTTP ${failure.status}` }
   if (settings.codes.includes(failure.code)) return { kind: 'retry', reason: `code ${failure.code}` }
   const message = typeof failure.message === 'string' ? failure.message.slice(0, LIMITS.messageLength) : ''

@@ -1,4 +1,4 @@
-// End-to-end against the real rc.5 agent loop: a scripted upstream fails with
+// End-to-end against the DSH agent loop: a scripted upstream fails with
 // 524 / dropped connections after a completed tool step, and the plugin must
 // rerun only the failed step on the same history, with no extra user message.
 import { test } from 'node:test'
@@ -204,6 +204,25 @@ test('cancelling during the wait stops the retry', async () => {
 const assistantTexts = agent => eventsOf(agent, 'assistant/message').map(event => event.data.message.content.map(block => block.text ?? '').join(''))
 /** Text of every message one request sent, by role. */
 const sent = request => request.map(message => [message.role, message.content.map(block => block.text ?? (block.type === 'tool-result' ? '[result]' : `[${block.type}]`)).join('')])
+
+for (const partial of ['', 'Opening sentence.']) {
+  test(`content refusal ${partial ? 'after answer text' : 'before answer text'} keeps the upstream error even with matching retry rules`, async t => {
+    const fail = { code: 'CONTENT_REFUSED', message: 'The provider declined this request.' }
+    const { ctx, agent, adapter } = await harness({
+      config: { excludeCodes: [], codes: [fail.code], messagePatterns: ['.*'] },
+      script: [{ partial, fail }, { text: 'unexpected retry' }],
+    })
+    t.after(() => ctx.fiber.dispose())
+    await runTurn(agent)
+    const end = turnEnd(agent)
+    assert.equal(end.kind, 'error')
+    assert.equal(end.error.code, fail.code)
+    assert.equal(end.error.message, fail.message)
+    assert.equal(adapter.requests.length, 1)
+    assert.equal(eventsOf(agent, 'llm/retry').length, 0)
+    assert.ok(assistantTexts(agent).every(text => !text.includes('输出未完成')))
+  })
+}
 
 test('answer text cut by a gateway is kept in the session and "继续" continues from it', async () => {
   const { ctx, agent, adapter } = await harness({

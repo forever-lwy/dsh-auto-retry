@@ -15,8 +15,8 @@ export declare function salvageNotice(failure: LlmFailure): string;
 /**
  * Pass a provider stream through unchanged, except that an `error` finish after
  * visible answer text becomes a notice block plus a `max-tokens` finish.
- * Reasoning-only or blank attempts, cancellations (`aborted`) and every
- * successful finish are left as they are, so retries still apply to them.
+ * Explicit refusals, reasoning-only or blank attempts, cancellations and
+ * successful finishes pass through unchanged.
  * @param stream - the chunk stream returned by the rest of the `llm/stream` chain.
  * @param onSalvage - called once with the original failure when an ending is rewritten.
  */
